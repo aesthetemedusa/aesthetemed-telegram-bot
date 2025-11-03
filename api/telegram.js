@@ -1,47 +1,26 @@
 export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb'
-    }
-  }
+  api: { bodyParser: true }
 };
 
 export default async function handler(req, res) {
-  const TELEGRAM_TOKEN = process.env.BOT_TOKEN;
-  const OPENAI_KEY = process.env.OPENAI_API_KEY;
+  try {
+    if (req.method !== "POST") return res.status(200).send("OK");
+    const msg = req.body?.message;
+    const chat_id = msg?.chat?.id;
+    const text = msg?.text || "(no text)";
 
-  if (req.method !== "POST") return res.status(200).send("OK");
+    if (!chat_id) return res.status(200).send("NO_CHAT");
 
-  const message = req.body?.message;
-  const chat_id = message?.chat?.id;
-  const text = message?.text || "";
-
-  if (!chat_id) return res.status(200).send("no chat");
-
-  const sendMessage = async (msg) => {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+    // эхо-ответ
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id, text: msg })
+      body: JSON.stringify({ chat_id, text: `echo: ${text}` })
     });
-  };
 
-  await sendMessage("Processing...");
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${OPENAI_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: text }]
-    })
-  }).then(r => r.json());
-
-  const reply = response?.choices?.[0]?.message?.content || "No response";
-  await sendMessage(reply);
-
-  res.status(200).send("OK");
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error("handler error", e);
+    return res.status(200).json({ ok: false });
+  }
 }
