@@ -10,7 +10,6 @@ export default async function handler(req, res) {
   const TELEGRAM_TOKEN = process.env.BOT_TOKEN;
   const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
-  // Telegram webhook always sends POST
   if (req.method !== "POST") return res.status(200).send("OK");
 
   const message = req.body?.message;
